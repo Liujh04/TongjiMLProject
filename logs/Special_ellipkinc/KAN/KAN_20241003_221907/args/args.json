@@ -1,0 +1,33 @@
+{
+    "chdir": "/home/autolab/jhl/KAN/src",
+    "layers_width": [
+        5
+    ],
+    "batch_norm": false,
+    "activation_name": "gelu",
+    "pre_train_ckpt": "",
+    "dataset": "Special_ellipkinc",
+    "batch_size": 1024,
+    "test_batch_size": 128,
+    "epochs": 100,
+    "lr": 0.01,
+    "optimizer": "adam",
+    "loss": "mse",
+    "no_cuda": false,
+    "dry_run": false,
+    "seed": 1314,
+    "log_interval": 10,
+    "save_model": true,
+    "save_model_interval": 200,
+    "log_dir": "/home/autolab/jhl/KAN/logs/Special_ellipkinc/KAN/KAN_20241003_221907",
+    "kan_bspline_grid": 5,
+    "kan_bspline_order": 3,
+    "kan_shortcut_name": "silu",
+    "kan_grid_range": [
+        -1,
+        1
+    ],
+    "model": "KAN",
+    "output_size": 1,
+    "input_size": 2
+}

@@ -311,7 +311,6 @@ class KAN(nn.Module):
             x_numerical, preacts, postacts_numerical, postspline = self.act_fun[l](x)
 
             if self.symbolic_enabled == True:
-                raise RuntimeError("the symbolic function implementation is very slow.")
                 x_symbolic, postacts_symbolic = self.symbolic_fun[l](x)
             else:
                 x_symbolic = 0.
@@ -559,7 +558,7 @@ class KAN(nn.Module):
             print('y range: [' + '%.2f' % y_min, ',', '%.2f' % y_max, ']')
         return x_min, x_max, y_min, y_max
 
-    def plot(self, folder="./figures", beta=3, mask=False, mode="supervised", scale=0.5, tick=False, sample=False, in_vars=None, out_vars=None, title=None):
+    def plot(self, folder, beta=3, mask=False, mode="supervised", scale=0.5, tick=False, sample=False, in_vars=None, out_vars=None, title=None):
         '''
         plot KAN
         
@@ -675,18 +674,17 @@ class KAN(nn.Module):
         max_num_weights = np.max(width[:-1] * width[1:])
         y1 = 0.4 / np.maximum(max_num_weights, 3)
 
+        # Assume the neural connection diagram is drawn first
         fig, ax = plt.subplots(figsize=(10 * scale, 10 * scale * (neuron_depth - 1) * y0))
-        # fig, ax = plt.subplots(figsize=(5,5*(neuron_depth-1)*y0))
 
-        # plot scatters and lines
         for l in range(neuron_depth):
             n = width[l]
             spacing = A / n
             for i in range(n):
+                # Plot neurons
                 plt.scatter(1 / (2 * n) + i / n, l * y0, s=min_spacing ** 2 * 10000 * scale ** 2, color='black')
 
                 if l < neuron_depth - 1:
-                    # plot connections
                     n_next = width[l + 1]
                     N = n * n_next
                     for j in range(n_next):
@@ -697,15 +695,17 @@ class KAN(nn.Module):
                         if symbol_mask == 1. and numerical_mask == 1.:
                             color = 'purple'
                             alpha_mask = 1.
-                        if symbol_mask == 1. and numerical_mask == 0.:
+                        elif symbol_mask == 1. and numerical_mask == 0.:
                             color = "red"
                             alpha_mask = 1.
-                        if symbol_mask == 0. and numerical_mask == 1.:
+                        elif symbol_mask == 0. and numerical_mask == 1.:
                             color = "black"
                             alpha_mask = 1.
-                        if symbol_mask == 0. and numerical_mask == 0.:
+                        else:
                             color = "white"
                             alpha_mask = 0.
+                        
+                        # Plot connections
                         if mask == True:
                             plt.plot([1 / (2 * n) + i / n, 1 / (2 * N) + id_ / N], [l * y0, (l + 1 / 2) * y0 - y1], color=color, lw=2 * scale, alpha=alpha[l][j][i] * self.mask[l][i].item() * self.mask[l + 1][j].item())
                             plt.plot([1 / (2 * N) + id_ / N, 1 / (2 * n_next) + j / n_next], [(l + 1 / 2) * y0 + y1, (l + 1) * y0], color=color, lw=2 * scale, alpha=alpha[l][j][i] * self.mask[l][i].item() * self.mask[l + 1][j].item())
@@ -713,8 +713,27 @@ class KAN(nn.Module):
                             plt.plot([1 / (2 * n) + i / n, 1 / (2 * N) + id_ / N], [l * y0, (l + 1 / 2) * y0 - y1], color=color, lw=2 * scale, alpha=alpha[l][j][i] * alpha_mask)
                             plt.plot([1 / (2 * N) + id_ / N, 1 / (2 * n_next) + j / n_next], [(l + 1 / 2) * y0 + y1, (l + 1) * y0], color=color, lw=2 * scale, alpha=alpha[l][j][i] * alpha_mask)
 
-            plt.xlim(0, 1)
-            plt.ylim(-0.1 * y0, (neuron_depth - 1 + 0.1) * y0)
+                        # Compute the position for placing activation PNG
+                        im = plt.imread(f'{folder}/sp_{l}_{i}_{j}.png')
+                        # Calculate the position of the connection midpoint
+                        mid_x = 1 / (2 * N) + id_ / N
+                        mid_y = (l * y0 + (l + 1) * y0) / 2
+                        
+                        # Define the size of the activation image to place
+                        width_ax = 0.08  # Small width for activation image
+                        height_ax = 0.08  # Small height for activation image
+                        
+                        # Place the activation image using 'imshow' without creating a new axis
+                        ax.imshow(im, extent=(mid_x - width_ax / 2, mid_x + width_ax / 2, mid_y - height_ax / 2, mid_y + height_ax / 2), alpha=alpha[l][j][i])
+
+        # Adjust the plot limits to ensure all content is visible
+        plt.xlim(0, 1)
+        plt.ylim(-0.1 * y0, (neuron_depth - 1 + 0.1) * y0)
+
+        # Save the final combined image with the activation functions
+        plt.savefig(f'{folder}/neural_network.png', bbox_inches="tight", dpi=400)
+        plt.close()
+
 
         # -- Transformation functions
         DC_to_FC = ax.transData.transform

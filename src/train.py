@@ -13,16 +13,17 @@ from utils.utils import *
 from models.kan.LBFGS import *
 from torch.utils.tensorboard import SummaryWriter
 
-import scripts.args_KAN as args_KAN,scripts.args_MLP as args_MLP
+import scripts.args_KAN as args_KAN, scripts.args_MLP as args_MLP
 
 warnings.simplefilter(action='ignore', category=UserWarning)
+
 
 def train(args, model, device, train_loader, optimizer, epoch, logger, start_index):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader, start_index):
         data, target = todevice(data, device), todevice(target, device)
 
-        if args.optimizer in ["adam",'sgd']:
+        if args.optimizer in ["adam", 'sgd']:
 
             optimizer.zero_grad()
             output = model(data)
@@ -33,7 +34,7 @@ def train(args, model, device, train_loader, optimizer, epoch, logger, start_ind
                 losses = [F.mse_loss(output, target)]
             else:
                 raise NotImplementedError
-            
+
             loss = 0
             for l in losses:
                 loss = loss + l
@@ -70,7 +71,7 @@ def train(args, model, device, train_loader, optimizer, epoch, logger, start_ind
                     losses = [F.mse_loss(output, target)]
                 else:
                     raise NotImplementedError
-                
+
                 logger.add_scalar('Train/Loss', sum(losses).item(), epoch * len(train_loader) + batch_idx)
 
         if args.save_model and (batch_idx + 1) % args.save_model_interval == 0:
@@ -83,11 +84,12 @@ def train(args, model, device, train_loader, optimizer, epoch, logger, start_ind
 
     return model
 
+
 def test(args, model, device, test_loader, epoch, logger):
     model.eval()
 
     if args.loss == "cross_entropy":
-        
+
         test_loss = 0
         correct = 0
         with torch.no_grad():
@@ -99,12 +101,12 @@ def test(args, model, device, test_loader, epoch, logger):
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
         test_loss /= len(test_loader.dataset)
-        
+
         logger.add_scalar('Test/Loss', test_loss, epoch)
         logger.add_scalar('Test/Accuracy', 100. * correct / len(test_loader.dataset), epoch)
 
         return 100. * correct / len(test_loader.dataset)
-    
+
     elif args.loss == "mse":
         test_loss = 0
         with torch.no_grad():
@@ -116,15 +118,16 @@ def test(args, model, device, test_loader, epoch, logger):
                 test_loss += per_sample_rmse.sum().item()
 
         test_loss /= len(test_loader.dataset)
-        
+
         logger.add_scalar('Test/Loss', test_loss, epoch)
-    
+
     else:
         raise NotImplementedError
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="KAN", #required=True,
+    parser.add_argument('--model', type=str, default="KAN",  # required=True,
                         help='network structure')
 
     args, rest_args = parser.parse_known_args()
@@ -136,10 +139,10 @@ def main():
         args = args_MLP.get_args(rest_args)
     else:
         raise NotImplementedError
-    
+
     args.model = model
     os.chdir(args.chdir)
-    
+
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     if use_cuda:
         device = torch.device("cuda")
@@ -148,21 +151,21 @@ def main():
 
     randomness_control(args.seed)
 
-    args.save_model_interval = max(args.save_model_interval , 1)
+    args.save_model_interval = max(args.save_model_interval, 1)
 
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.log_dir = args.log_dir + f"/{args.dataset}/{args.model}/{args.model}_{current_time}"
-    os.makedirs(args.log_dir, exist_ok = True)
-    
+    os.makedirs(args.log_dir, exist_ok=True)
+
     logger = SummaryWriter(log_dir=args.log_dir)
 
-    train_loader, test_loader, num_classes, input_size = get_loader(args, use_cuda = use_cuda)
+    train_loader, test_loader, num_classes, input_size = get_loader(args, use_cuda=use_cuda)
 
     args.output_size = num_classes
     args.input_size = input_size
 
     args.activation = get_activation(args)
-    if(args.model == "KAN"):
+    if (args.model == "KAN"):
         args.kan_shortcut_function = get_shortcut_function(args)
 
     model = get_model(args)
@@ -174,12 +177,12 @@ def main():
         optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
     elif args.optimizer == "lbfgs":
         optimizer = LBFGS(
-            filter(lambda p: p.requires_grad, model.parameters()), 
-            lr=args.lr, 
-            history_size=10, 
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=args.lr,
+            history_size=10,
             line_search_fn="strong_wolfe",
-            tolerance_grad=1e-32, 
-            tolerance_change=1e-32, 
+            tolerance_grad=1e-32,
+            tolerance_change=1e-32,
             tolerance_ys=1e-32)
     else:
         raise NotImplementedError
@@ -199,12 +202,17 @@ def main():
             fvctimer.resume()
         else:
             fvctimer.reset()
-        train(args, model, device, train_loader, optimizer, epoch, logger, start_index = (epoch - 1) *len(train_loader))
+        train(args, model, device, train_loader, optimizer, epoch, logger, start_index=(epoch - 1) * len(train_loader))
         fvctimer.pause()
         test(args, model, device, test_loader, epoch, logger)
-        
+
     logger.close()
+    if(args.model=="KAN"):
+        model.print_kan(args.log_dir)
+    else:
+        pass
     print("Finished")
+
 
 if __name__ == '__main__':
     main()

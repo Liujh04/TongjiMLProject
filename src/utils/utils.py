@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from fvcore.nn import FlopCountAnalysis, parameter_count
 
 from models.mlp import *
-from models.kanbefair import *
+from models.KAN_model import *
 from models.bspline_mlp import *
 from models.utils import *
 
@@ -61,11 +61,7 @@ def get_model(args):
     if args.model == "MLP":
         model = MLP(args)
     elif args.model == "KAN":
-        model = KANbeFair(args)
-    elif args.model == "MLP_Text":
-        model = MLP_Text(args)
-    elif args.model == "KAN_Text":
-        model = KANbeFair_Text(args)
+        model = KAN_model(args)
     elif args.model == "BSpline_MLP":
         model = BSpline_MLP(args)
     elif args.model == "BSpline_First_MLP":
