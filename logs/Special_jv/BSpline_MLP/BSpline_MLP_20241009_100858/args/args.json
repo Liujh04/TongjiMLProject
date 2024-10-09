@@ -1,0 +1,33 @@
+{
+    "chdir": "/home/autolab/jhl/KAN/src",
+    "layers_width": [
+        5
+    ],
+    "batch_norm": false,
+    "activation_name": "gelu",
+    "pre_train_ckpt": "",
+    "dataset": "Special_jv",
+    "batch_size": 1024,
+    "test_batch_size": 128,
+    "epochs": 1000,
+    "lr": 0.01,
+    "optimizer": "adam",
+    "loss": "mse",
+    "no_cuda": false,
+    "dry_run": false,
+    "seed": 1,
+    "log_interval": 10,
+    "save_model": true,
+    "save_model_interval": 200,
+    "log_dir": "/home/autolab/jhl/KAN/logs/Special_jv/BSpline_MLP/BSpline_MLP_20241009_100858",
+    "kan_bspline_grid": 5,
+    "kan_bspline_order": 3,
+    "kan_shortcut_name": "silu",
+    "kan_grid_range": [
+        -1,
+        1
+    ],
+    "model": "BSpline_MLP",
+    "output_size": 1,
+    "input_size": 2
+}

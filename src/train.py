@@ -13,7 +13,7 @@ from utils.utils import *
 from models.kan.LBFGS import *
 from torch.utils.tensorboard import SummaryWriter
 
-import scripts.args_KAN as args_KAN, scripts.args_MLP as args_MLP
+import scripts.args_list as args_list
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
@@ -133,10 +133,8 @@ def main():
     args, rest_args = parser.parse_known_args()
     model = args.model
 
-    if model == 'KAN':
-        args = args_KAN.get_args(rest_args)
-    elif model == 'MLP':
-        args = args_MLP.get_args(rest_args)
+    if model == 'KAN' or model == 'MLP' or 'BSpline_MLP' or 'BSpline_First_MLP':
+        args = args_list.get_args(rest_args)
     else:
         raise NotImplementedError
 
